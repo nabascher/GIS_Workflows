@@ -5,11 +5,11 @@ import zipfile
 arcpy.overwriteOutput = True
 
 # Delete feature classes variable
-Remove = False
+Remove_FC = False
 
 # Create path variables
-Path_To_Project_Area_GDB = r"C:\Users\nbasch\Desktop\Temp\Testing_Dir"
-Output_Folder_Name = 'To_LYoung_230124'
+Path_To_Project_Area_GDB = r"C:\Users\nbasch\Desktop\Temp\Script_Working"
+Output_Folder_Name = 'Test'
 
 # Join Folder names
 Path_To_Source_Dir = rf"{Path_To_Project_Area_GDB}\source"
@@ -29,7 +29,7 @@ arcpy.FeatureClassToShapefile_conversion('Project_Area', rf"{Output_Folder}")
 
 # Zip up shapefile
 arcpy.env.workspace = Output_Folder
-def zip_shapes(Output_Folder, Delete):
+def zip_shapes(Output_Folder, Remove_SHP):
     """
      Creates a zip file containing the input shapefile
      inputs -
@@ -74,8 +74,8 @@ def zip_shapes(Output_Folder, Delete):
             if file == inName + extension:
                 inFile = os.path.join(inLocation, file)
                 zip.write(inFile, file)
-
-    if Delete:
+    
+    if Remove_SHP:
         arcpy.Delete_management('Project_Area.shp')
 
     zip.close()
@@ -83,11 +83,20 @@ def zip_shapes(Output_Folder, Delete):
     return zip_path
 
 
+try:
+    zip_shapes(Output_Folder, True)
+
+except RuntimeError:
+    for zip_file in os.listdir(Output_Folder):
+        if os.path.exists(zip_file):
+            os.unlink(zip_file)
+    zip_shapes(Output_Folder, False)
+
 # Copy project geodatabase
 arcpy.Copy_management(Project_Area_GDB, rf"{Output_Folder}\Project_Area.gdb")
 
 # Remove unnecessary feature classes
-if Remove:
+if Remove_FC:
     arcpy.env.workspace = rf"{Output_Folder}\Project_Area.gdb"
     for fc in arcpy.ListFeatureClasses():
         if fc != 'Project_Area' or fc != 'Project_Centerline':
